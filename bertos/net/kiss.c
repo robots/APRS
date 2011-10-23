@@ -11,7 +11,7 @@ Afsk *kiss_afsk;
 
 ticks_t kiss_queue_ts;
 uint8_t kiss_queue_state;
-uint8_t kiss_queue_len = 0;
+size_t kiss_queue_len = 0;
 struct Kiss_msg kiss_queue[KISS_QUEUE];
 
 uint8_t kiss_txdelay;
@@ -49,12 +49,14 @@ void kiss_serial_poll()
 	
 	// sanity checks
 	// no serial input in last 2 secs?
-	if (timer_clock() - k.last_tick  >  ms_to_ticks(2000L)) {
+	if ((k.pos != 0) && (timer_clock() - k.last_tick  >  ms_to_ticks(2000L))) {
+		LOG_INFO("Serial - Timeout\n");
 		k.pos = 0;
 	}
 	
 	// about to overflow buffer? reset
-	if (k.pos >= ((uint8_t)CONFIG_AX25_FRAME_BUF_LEN - 2)) {
+	if (k.pos >= (CONFIG_AX25_FRAME_BUF_LEN - 2)) {
+		LOG_INFO("Serial - Packet too long %d >= %d\n", k.pos, CONFIG_AX25_FRAME_BUF_LEN - 2);
 		k.pos = 0;
 	}
 
@@ -158,7 +160,8 @@ void kiss_queue_process()
 		return;
 	}
 
-	for (uint8_t i = 0; i < kiss_queue_len; i++) {
+	LOG_INFO("Queue sending packets: %d\n", kiss_queue_len);
+	for (size_t i = 0; i < kiss_queue_len; i++) {
 		ax25_sendRaw(kiss_ax25, kiss_queue[i].buf, kiss_queue[i].pos);
 	}
 
@@ -166,9 +169,9 @@ void kiss_queue_process()
 	kiss_queue_state = KISS_QUEUE_IDLE;
 }
 
-void kiss_send_host(uint8_t ch, uint8_t *buf, uint8_t len)
+void kiss_send_host(uint8_t ch, uint8_t *buf, size_t len)
 {
-	uint8_t i;
+	size_t i;
 
 	kfile_putc(KISS_FEND, &kiss_ser->fd);
 	kfile_putc((ch << 4) & 0xf0, &kiss_ser->fd);

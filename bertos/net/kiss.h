@@ -37,7 +37,7 @@ enum {
 
 struct Kiss_msg {
 	uint8_t buf[ CONFIG_AX25_FRAME_BUF_LEN ];
-	uint8_t pos;           // next byte to fill
+	size_t pos;           // next byte to fill
 	ticks_t last_tick;     // timestamp of last byte into buf
 };
 
@@ -45,7 +45,7 @@ void kiss_init(Serial *ser, AX25Ctx *ax25, Afsk *afsk);
 void kiss_serial_poll(void);
 void kiss_queue_message(uint8_t *buf, size_t len);
 void kiss_queue_process(void);
-void kiss_send_host(uint8_t ch, uint8_t *buf, uint8_t len);
+void kiss_send_host(uint8_t ch, uint8_t *buf, size_t len);
 
 #endif
 
