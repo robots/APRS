@@ -46,7 +46,7 @@ static void init(void)
 	/* Initialize LED driver */
 	LED_INIT();
 
-	ser_init(&ser_port, SER_UART1);
+	ser_init(&ser_port, SER_UART2);
 	ser_setbaudrate(&ser_port, 115200L);
 
 	afsk_init(&afsk, 0, 0);
