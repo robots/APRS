@@ -146,10 +146,6 @@ void ax25_poll(AX25Ctx *ctx)
 	{
 		if (!ctx->escape && c == HDLC_FLAG)
 		{
-			if (ctx->dcd_state == 0) {
-				ctx->dcd_state++;
-			}
-
 			if (ctx->frm_len >= AX25_MIN_FRAME_LEN)
 			{
 				if (ctx->crc_in == AX25_CRC_CORRECT)
@@ -163,9 +159,6 @@ void ax25_poll(AX25Ctx *ctx)
 					} else {
 						ax25_decode(ctx);
 					}
-
-					ctx->dcd_state = 0;
-					ctx->dcd = false;
 				}
 				else
 				{
@@ -202,12 +195,12 @@ void ax25_poll(AX25Ctx *ctx)
 				ctx->buf[ctx->frm_len++] = c;
 				ctx->crc_in = updcrc_ccitt(c, ctx->crc_in);
 
-				if (ctx->dcd_state == 2 && c == AX25_PID_NOLAYER3) {
+				if (ctx->dcd_state == 1 && c == AX25_PID_NOLAYER3) {
 					ctx->dcd_state ++;
 					ctx->dcd = true;
 				}
 
-				if (ctx->dcd_state == 1 && c == AX25_CTRL_UI) {
+				if (ctx->dcd_state == 0 && c == AX25_CTRL_UI) {
 					ctx->dcd_state ++;
 				}
 			}
