@@ -44,7 +44,7 @@
  * $WIZ$ type = "enum"
  * $WIZ$ value_list = "log_level"
  */
-#define AX25_LOG_LEVEL      LOG_LVL_WARN
+#define AX25_LOG_LEVEL      LOG_LVL_INFO
 
 /**
  * Module logging format.

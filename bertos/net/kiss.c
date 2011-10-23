@@ -5,6 +5,10 @@
 
 #include <net/kiss.h>
 
+#define LOG_LEVEL  3
+#define LOG_FORMAT LOG_FMT_TERSE
+#include <cfg/log.h>
+
 Serial *kiss_ser;
 AX25Ctx *kiss_ax25;
 Afsk *kiss_afsk;
@@ -76,7 +80,7 @@ void kiss_serial_poll()
 			escaped = false;
 			c = KISS_FESC;
 		}
-	} else if (c == KISS_FEND) {
+	} else if (c == KISS_TFEND) {
 		if (escaped) {
 			escaped = false;
 			c = KISS_FEND;
@@ -102,24 +106,31 @@ static void kiss_cmd_process(struct Kiss_msg *k)
 		return;
 
 	if (cmd == KISS_CMD_DATA) {
+		LOG_INFO("Kiss - queueing message\n");
 		kiss_queue_message(k->buf + 1, k->pos - 1);
 		//ax25_sendRaw(kiss_ax25, k->buf+1, k->pos-1);
 		return;
 	}
 
 	if (k->pos < 2) {
+		LOG_INFO("Kiss - discarting packet - too short\n");
 		return;
 	}
 	
 	if (cmd == KISS_CMD_TXDELAY) {
+		LOG_INFO("Kiss - setting txdelay %d\n", k->buf[1]);
 		kiss_txdelay = k->buf[1];
 	} else if (cmd == KISS_CMD_P) {
+		LOG_INFO("Kiss - setting persistence %d\n", k->buf[1]);
 		kiss_persistence = k->buf[1];
 	} else if (cmd == KISS_CMD_SlotTime) {
+		LOG_INFO("Kiss - setting slot_time %d\n", k->buf[1]);
 		kiss_slot_time = k->buf[1];
 	} else if (cmd == KISS_CMD_TXtail) {
+		LOG_INFO("Kiss - setting txtail %d\n", k->buf[1]);
 		kiss_txtail = k->buf[1];
 	} else if (cmd == KISS_CMD_FullDuplex) {
+		LOG_INFO("Kiss - setting duplex %d\n", k->buf[1]);
 		kiss_duplex = k->buf[1];
 	}
 }
@@ -146,13 +157,17 @@ void kiss_queue_process()
 		return;
 	}
 
-	random = (uint32_t)rand() & 0xff;
-
 	if (kiss_queue_state == KISS_QUEUE_DELAYED) {
 		if (timer_clock() - kiss_queue_ts <= ms_to_ticks(kiss_slot_time * 10)) {
 			return;
 		}
-	} else if (random > kiss_persistence) {
+		LOG_INFO("Queue released\n");
+	}
+
+	random = (uint32_t)rand() & 0xff;
+	LOG_INFO("Queue random is %d\n", random);
+	if (random > kiss_persistence) {
+		LOG_INFO("Queue delayed for %dms\n", kiss_slot_time * 10);
 
 		kiss_queue_state = KISS_QUEUE_DELAYED;
 		kiss_queue_ts = timer_clock();
