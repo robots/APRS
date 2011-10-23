@@ -34,7 +34,6 @@ static void AD_Reset()
 {
 	ADC_InitTypeDef ADC_InitStructure;
 
-	//ADC_DeInit(ADC1);
 	RCC->APB2RSTR |= RCC_APB2_ADC1;
 	RCC->APB2RSTR &= ~RCC_APB2_ADC1;
 
@@ -94,17 +93,6 @@ static void AD_ISR(void)
 
 void AD_Init(Afsk *afsk)
 {
-	//GPIO_InitTypeDef GPIO_InitStructure;
-
-	// Analog input 
-  //GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1;
-	//GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-  //GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AIN;
-  //GPIO_Init(GPIOA, &GPIO_InitStructure);
-
-	//RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
-	//RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, ENABLE);
-
 	stm32_gpioPinConfig(ADC_GPIO_BASE, ADC_CH1_PIN, GPIO_MODE_AIN, GPIO_SPEED_50MHZ);
 
 	RCC->APB2ENR |= RCC_APB2_ADC1;

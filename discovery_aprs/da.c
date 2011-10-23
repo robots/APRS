@@ -27,30 +27,19 @@ static void DA_ISR()
 
 void DA_Init(Afsk *afsk)
 {
-	//GPIO_InitTypeDef GPIO_InitStructure;
 	DAC_InitTypeDef DAC_InitStructure;
 
 	RCC->APB1ENR |= RCC_APB1_TIM2;
 	RCC->APB1ENR |= RCC_APB1_DAC;
 
-//	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
-//  RCC_APB1PeriphClockCmd(RCC_APB1Periph_DAC, ENABLE);
-
 	stm32_gpioPinConfig(PTT_GPIO_BASE, PTT_PIN, GPIO_MODE_OUT_PP, GPIO_SPEED_50MHZ);
-
-	// Analog input 
-  //GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4;
-	//GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-  //GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AIN;
-  //GPIO_Init(GPIOA, &GPIO_InitStructure);
-
 	stm32_gpioPinConfig(DAC_GPIO_BASE, DAC_CH1_PIN, GPIO_MODE_AIN, GPIO_SPEED_50MHZ);
 
-  DAC_InitStructure.DAC_Trigger = DAC_Trigger_Software;
-  DAC_InitStructure.DAC_WaveGeneration = DAC_WaveGeneration_None;
-  DAC_InitStructure.DAC_OutputBuffer = DAC_OutputBuffer_Enable;
-  DAC_Init(DAC_Channel_1, &DAC_InitStructure);
-  DAC_Cmd(DAC_Channel_1, ENABLE);
+	DAC_InitStructure.DAC_Trigger = DAC_Trigger_Software;
+	DAC_InitStructure.DAC_WaveGeneration = DAC_WaveGeneration_None;
+	DAC_InitStructure.DAC_OutputBuffer = DAC_OutputBuffer_Enable;
+	DAC_Init(DAC_Channel_1, &DAC_InitStructure);
+	DAC_Cmd(DAC_Channel_1, ENABLE);
 
 	DAC->DHR8R1 = 0;
 	DAC->SWTRIGR |= 1;
@@ -68,7 +57,6 @@ void DA_SetTimer(uint16_t prescaler, uint16_t period)
   	.TIM_RepetitionCounter = 0x0000
 	};
 
-	//TIM_DeInit(TIM2);
 	RCC->APB1RSTR |= RCC_APB1_TIM2;
 	RCC->APB1RSTR &= ~RCC_APB1_TIM2;
 
