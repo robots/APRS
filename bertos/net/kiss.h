@@ -1,6 +1,9 @@
 #ifndef KISS_h_
 #define KISS_h_
 
+#include <stdint.h>
+#include <string.h>
+
 #include <net/afsk.h>
 #include <net/ax25.h>
 #include <drv/ser.h>

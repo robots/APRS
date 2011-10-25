@@ -1,12 +1,11 @@
-#include <stdint.h>
-#include <string.h>
+#include "kiss.h"
+
+#include "cfg/cfg_kiss.h"
 
 #include <algo/rand.h>
 
-#include <net/kiss.h>
-
-#define LOG_LEVEL  3
-#define LOG_FORMAT LOG_FMT_TERSE
+#define LOG_LEVEL  KISS_LOG_LEVEL
+#define LOG_FORMAT KISS_LOG_FORMAT
 #include <cfg/log.h>
 
 Serial *kiss_ser;
