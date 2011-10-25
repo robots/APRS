@@ -111,6 +111,93 @@ INLINE uint8_t sin_sample(uint16_t idx)
 }
 
 
+// 1200Hz @ 9600Hz FIR filter band pass
+int8_t filterFIR1200 (int8_t s)
+{
+
+  int Q = 10;
+  int8_t B[11] = {
+    -12,-16,-15,0,20,29,20,0,-15,-16,-12
+  };
+
+
+  static int16_t Bmem[16];
+
+  int8_t i;
+  int16_t y;
+
+  /* ulozeni noveho vstupu */
+  Bmem[0] = s;
+  /* vynulovani sumy */
+  y = 0;
+  /* nejprve vstupni cast - vynasobit, posunout, secitat */
+  for (i = Q; i >= 0; i--)
+    {
+      y += Bmem[i] * B[i];
+      Bmem[i + 1] = Bmem[i];
+    }
+  /* a na vystup s nim */
+  return (int8_t) (y / 128);
+}
+
+// 2200Hz @ 9600Hz FIR filter band pass
+int8_t filterFIR2200 (int8_t s)
+{
+
+  int Q = 10;
+  int8_t B[11] = {
+    11,15,-8,-26,4,30,4,-26,-8,15,11
+  };
+
+
+  static int16_t Bmem[16];
+
+  int8_t i;
+  int16_t y;
+
+  /* ulozeni noveho vstupu */
+  Bmem[0] = s;
+  /* vynulovani sumy */
+  y = 0;
+  /* nejprve vstupni cast - vynasobit, posunout, secitat */
+  for (i = Q; i >= 0; i--)
+    {
+      y += Bmem[i] * B[i];
+      Bmem[i + 1] = Bmem[i];
+    }
+  /* a na vystup s nim */
+  return (int8_t) (y / 128);
+}
+
+// 1200Hz @ 9600Hz FIR filter low pass
+int8_t filterFIR1200low (int8_t s)
+{
+
+  int Q = 7;
+  int8_t B[8] = {
+    -9, 3, 26,47,47,26,3,-9
+  };
+
+
+  static int16_t Bmem[16];
+
+  int8_t i;
+  int16_t y;
+
+  /* ulozeni noveho vstupu */
+  Bmem[0] = s;
+  /* vynulovani sumy */
+  y = 0;
+  /* nejprve vstupni cast - vynasobit, posunout, secitat */
+  for (i = Q; i >= 0; i--)
+    {
+      y += Bmem[i] * B[i];
+      Bmem[i + 1] = Bmem[i];
+    }
+  /* a na vystup s nim */
+  return (int8_t) (y / 128);
+}
+
 #define BIT_DIFFER(bitline1, bitline2) (((bitline1) ^ (bitline2)) & 0x01)
 #define EDGE_FOUND(bitline)            BIT_DIFFER((bitline), (bitline) >> 1)
 
@@ -219,6 +306,8 @@ void afsk_adc_isr(Afsk *af, int8_t curr_sample)
 	STATIC_ASSERT(SAMPLERATE == 9600);
 	STATIC_ASSERT(BITRATE == 1200);
 
+#if (CONFIG_AFSK_FILTER != AFSK_FIR)
+
 	/*
 	 * Frequency discrimination is achieved by simply multiplying
 	 * the sample with a delayed sample of (samples per bit) / 2.
@@ -278,10 +367,44 @@ void afsk_adc_isr(Afsk *af, int8_t curr_sample)
 			}
 		}
 	}
-//kprintf("%+03d %+03d %+03d %d\n", curr_sample, af->iir_x[1], af->iir_y[1], (af->cd)?1:0);
 
 	/* Store current ADC sample in the af->delay_fifo */
 	fifo_push(&af->delay_fifo, curr_sample);
+
+#elif (CONFIG_AFSK_FILTER == AFSK_FIR)
+
+#DEFINE DCD_LEVEL 5
+
+	af->iir_y[0]=filterFIR1200(curr_sample);
+	af->iir_y[1]=filterFIR2200(curr_sample);
+	
+	af->iir_y[0] = af->iir_y[0] > 0?af->iir_y[0]:-af->iir_y[0];
+	af->iir_y[1] = af->iir_y[1] > 0?af->iir_y[1]:-af->iir_y[1];
+	
+	af->sampled_bits <<= 1;
+	af->sampled_bits |= filterFIR1200low(af->iir_y[1]-af->iir_y[0]) > 0;
+
+
+	if (af->iir_y[1] > DCD_LEVEL || af->iir_y[0] > DCD_LEVEL) {
+		af->cd_state++;
+		if (af->cd_state > 30) {
+			af->cd_state = 30;
+			af->cd = true;
+		}
+	} else {
+		if (af->cd_state > 0) {
+			af->cd_state --;
+
+			if (af->cd_state == 0) {
+				af->cd = false;
+			}
+		}
+	}
+
+#endif
+
+//kprintf("%+03d %+03d %+03d %d\n", curr_sample, af->iir_x[1], af->iir_y[1], (af->cd)?1:0);
+
 
 	/* If there is an edge, adjust phase sampling */
 	if (EDGE_FOUND(af->sampled_bits))
