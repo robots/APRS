@@ -17,7 +17,6 @@ tracker_USER_CSRC = \
 	$(tracker_SRC_PATH)/nmea.c \
 	$(tracker_SRC_PATH)/sb.c \
 	#$(tracker_SRC_PATH)/b91.c \
-	#$(tracker_SRC_PATH)/stm32f10x_rcc.c \
 	#
 
 # Files included by the user.

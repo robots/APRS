@@ -21,7 +21,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f10x_dac.h"
-#include "stm32f10x_rcc.h"
+//#include "stm32f10x_rcc.h"
 
 /** @addtogroup STM32F10x_StdPeriph_Driver
   * @{
@@ -95,13 +95,13 @@
   * @param  None
   * @retval None
   */
-void DAC_DeInit(void)
-{
-  /* Enable DAC reset state */
-  RCC_APB1PeriphResetCmd(RCC_APB1Periph_DAC, ENABLE);
-  /* Release DAC from reset state */
-  RCC_APB1PeriphResetCmd(RCC_APB1Periph_DAC, DISABLE);
-}
+//void DAC_DeInit(void)
+//{
+//  /* Enable DAC reset state */
+//  RCC_APB1PeriphResetCmd(RCC_APB1Periph_DAC, ENABLE);
+//  /* Release DAC from reset state */
+//  RCC_APB1PeriphResetCmd(RCC_APB1Periph_DAC, DISABLE);
+//}
 
 /**
   * @brief  Initializes the DAC peripheral according to the specified 

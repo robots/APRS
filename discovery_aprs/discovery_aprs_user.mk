@@ -15,8 +15,6 @@ discovery_aprs_USER_CSRC = \
 	$(discovery_aprs_SRC_PATH)/stm32f10x_adc.c \
 	$(discovery_aprs_SRC_PATH)/stm32f10x_dac.c \
 	$(discovery_aprs_SRC_PATH)/stm32f10x_tim.c \
-	#$(discovery_aprs_SRC_PATH)/stm32f10x_rcc.c \
-	#$(discovery_aprs_SRC_PATH)/stm32f10x_gpio.c \
 	#
 
 # Files included by the user.
