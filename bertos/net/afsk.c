@@ -94,6 +94,45 @@ static const uint8_t PROGMEM sin_table[] =
 
 STATIC_ASSERT(sizeof(sin_table) == SIN_LEN / 4);
 
+#if (CONFIG_AFSK_FILTER == AFSK_FIR)
+enum fir_filters
+{
+	FIR_1200_BP=0,
+	FIR_2200_BP=1,
+	FIR_1200_LP=2
+};
+
+static FIR fir_table[] =
+{
+	[FIR_1200_BP] = {
+		.taps = 11,
+		.coef = {
+			-12, -16, -15, 0, 20, 29, 20, 0, -15, -16, -12
+		},
+		.mem = {
+			0,
+		},
+	},
+	[FIR_2200_BP] = {
+		.taps = 11,
+		.coef = {
+			11, 15, -8, -26, 4, 30, 4, -26, -8, 15, 11
+		},
+		.mem = {
+			0,
+		},
+	},
+	[FIR_1200_LP] = {
+		.taps = 8,
+		.coef = {
+			-9, 3, 26, 47, 47, 26, 3, -9
+		},
+		.mem = {
+			0,
+		},
+	},
+};
+#endif
 
 /**
  * Given the index, this function computes the correct sine sample
@@ -110,93 +149,28 @@ INLINE uint8_t sin_sample(uint16_t idx)
 	return (idx >= (SIN_LEN / 2)) ? (255 - data) : data;
 }
 
-
-// 1200Hz @ 9600Hz FIR filter band pass
-int8_t filterFIR1200 (int8_t s)
+#if (CONFIG_AFSK_FILTER == AFSK_FIR)
+static int8_t fir_filter(int8_t s, enum fir_filters f)
 {
+	int8_t Q = fir_table[f].taps - 1;
+	int8_t *B = fir_table[f].coef;
+	int16_t *Bmem = fir_table[f].mem;
 
-  int Q = 10;
-  int8_t B[11] = {
-    -12,-16,-15,0,20,29,20,0,-15,-16,-12
-  };
+	int8_t i;
+	int16_t y;
 
+	Bmem[0] = s;
+	y = 0;
 
-  static int16_t Bmem[16];
+	for (i = Q; i >= 0; i--)
+	{
+		y += Bmem[i] * B[i];
+		Bmem[i + 1] = Bmem[i];
+	}
 
-  int8_t i;
-  int16_t y;
-
-  /* ulozeni noveho vstupu */
-  Bmem[0] = s;
-  /* vynulovani sumy */
-  y = 0;
-  /* nejprve vstupni cast - vynasobit, posunout, secitat */
-  for (i = Q; i >= 0; i--)
-    {
-      y += Bmem[i] * B[i];
-      Bmem[i + 1] = Bmem[i];
-    }
-  /* a na vystup s nim */
-  return (int8_t) (y / 128);
+	return (int8_t) (y / 128);
 }
-
-// 2200Hz @ 9600Hz FIR filter band pass
-int8_t filterFIR2200 (int8_t s)
-{
-
-  int Q = 10;
-  int8_t B[11] = {
-    11,15,-8,-26,4,30,4,-26,-8,15,11
-  };
-
-
-  static int16_t Bmem[16];
-
-  int8_t i;
-  int16_t y;
-
-  /* ulozeni noveho vstupu */
-  Bmem[0] = s;
-  /* vynulovani sumy */
-  y = 0;
-  /* nejprve vstupni cast - vynasobit, posunout, secitat */
-  for (i = Q; i >= 0; i--)
-    {
-      y += Bmem[i] * B[i];
-      Bmem[i + 1] = Bmem[i];
-    }
-  /* a na vystup s nim */
-  return (int8_t) (y / 128);
-}
-
-// 1200Hz @ 9600Hz FIR filter low pass
-int8_t filterFIR1200low (int8_t s)
-{
-
-  int Q = 7;
-  int8_t B[8] = {
-    -9, 3, 26,47,47,26,3,-9
-  };
-
-
-  static int16_t Bmem[16];
-
-  int8_t i;
-  int16_t y;
-
-  /* ulozeni noveho vstupu */
-  Bmem[0] = s;
-  /* vynulovani sumy */
-  y = 0;
-  /* nejprve vstupni cast - vynasobit, posunout, secitat */
-  for (i = Q; i >= 0; i--)
-    {
-      y += Bmem[i] * B[i];
-      Bmem[i + 1] = Bmem[i];
-    }
-  /* a na vystup s nim */
-  return (int8_t) (y / 128);
-}
+#endif
 
 #define BIT_DIFFER(bitline1, bitline2) (((bitline1) ^ (bitline2)) & 0x01)
 #define EDGE_FOUND(bitline)            BIT_DIFFER((bitline), (bitline) >> 1)
@@ -373,17 +347,13 @@ void afsk_adc_isr(Afsk *af, int8_t curr_sample)
 
 #elif (CONFIG_AFSK_FILTER == AFSK_FIR)
 
-#DEFINE DCD_LEVEL 5
+#define DCD_LEVEL 5
 
-	af->iir_y[0]=filterFIR1200(curr_sample);
-	af->iir_y[1]=filterFIR2200(curr_sample);
-	
-	af->iir_y[0] = af->iir_y[0] > 0?af->iir_y[0]:-af->iir_y[0];
-	af->iir_y[1] = af->iir_y[1] > 0?af->iir_y[1]:-af->iir_y[1];
-	
+	af->iir_y[0] = ABS(fir_filter(curr_sample, FIR_1200_BP));
+	af->iir_y[1] = ABS(fir_filter(curr_sample, FIR_2200_BP));
+
 	af->sampled_bits <<= 1;
-	af->sampled_bits |= filterFIR1200low(af->iir_y[1]-af->iir_y[0]) > 0;
-
+	af->sampled_bits |= fir_filter(af->iir_y[1] - af->iir_y[0], FIR_1200_LP) > 0;
 
 	if (af->iir_y[1] > DCD_LEVEL || af->iir_y[0] > DCD_LEVEL) {
 		af->cd_state++;

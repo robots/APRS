@@ -82,6 +82,14 @@ typedef struct Hdlc
 	bool rxstart;       ///< True if an HDLC_FLAG char has been found in the bitstream.
 } Hdlc;
 
+#define FIR_MAX_TAPS 16
+typedef struct FIR
+{
+	int8_t taps;
+	int8_t coef[FIR_MAX_TAPS];
+	int16_t mem[FIR_MAX_TAPS];
+} FIR;
+
 /**
  * RX FIFO buffer full error.
  */
@@ -211,10 +219,6 @@ INLINE Afsk *AFSK_CAST(KFile *fd)
 void afsk_adc_isr(Afsk *af, int8_t sample);
 uint8_t afsk_dac_isr(Afsk *af);
 void afsk_init(Afsk *af, int adc_ch, int dac_ch);
-int8_t filterFIR1200(int8_t);
-int8_t filterFIR1200low(int8_t);
-int8_t filterFIR2200(int8_t);
-
 
 /**
  * \name Afsk filter types.
