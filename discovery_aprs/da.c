@@ -1,6 +1,7 @@
 
 
 #include "da.h"
+#include "ad.h"
 
 #include <io/stm32_ints.h>
 #include <drv/gpio_stm32.h>
@@ -75,6 +76,8 @@ void DA_SetTimer(uint16_t prescaler, uint16_t period)
 
 void DA_Start()
 {
+	AD_Stop();
+
 	stm32_gpioPinWrite(PTT_GPIO_BASE, PTT_PIN, 1);
 
 	TIM_Cmd(TIM2, ENABLE);
@@ -82,6 +85,8 @@ void DA_Start()
 
 void DA_Stop()
 {
+	AD_Start();
+
 	stm32_gpioPinWrite(PTT_GPIO_BASE, PTT_PIN, 0);
 
 	TIM_Cmd(TIM2, DISABLE);
