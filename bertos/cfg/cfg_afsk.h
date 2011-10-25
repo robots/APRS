@@ -60,8 +60,7 @@
  *
  * $WIZ$ type = "enum"; value_list = "afsk_filter_list"
  */
-//#define CONFIG_AFSK_FILTER AFSK_CHEBYSHEV
-#define CONFIG_AFSK_FILTER AFSK_FIR
+#define CONFIG_AFSK_FILTER AFSK_CHEBYSHEV
 
 
 /**
