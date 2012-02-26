@@ -17,6 +17,9 @@ uint8_t kiss_queue_state;
 size_t kiss_queue_len = 0;
 struct Kiss_msg kiss_queue[KISS_QUEUE];
 
+#define KISS_PORTS 4
+kiss_in_callback_t kiss_in_callbacks[KISS_PORTS];
+
 uint8_t kiss_txdelay;
 uint8_t kiss_txtail;
 uint8_t kiss_persistence;
@@ -36,6 +39,14 @@ void kiss_init(Serial *ser, AX25Ctx *ax25, Afsk *afsk)
 	kiss_ser = ser;
 	kiss_ax25 = ax25;
 	kiss_afsk = afsk;
+}
+
+void kiss_set_in_callback(uint8_t port, kiss_in_callback_t fnc)
+{
+	if ((port == 0) || ((port - 1) > KISS_PORTS))
+		return;
+
+	kiss_in_callbacks[port - 1] = fnc;
 }
 
 void kiss_serial_poll()
@@ -101,8 +112,21 @@ static void kiss_cmd_process(struct Kiss_msg *k)
 	cmd = k->buf[0] & 0x0f;
 	port = k->buf[0] >> 4;
 
-	if (port != 0)
+	if (port != 0) {
+		kiss_in_callback_t fnc;
+
+		if (port > 5)
+			return;
+
+		if (cmd != KISS_CMD_DATA)
+			return;
+
+		fnc = kiss_in_callbacks[port - 1];
+		if (fnc) {
+			fnc(k->buf + 1, k->pos - 1);
+		}
 		return;
+	}
 
 	if (cmd == KISS_CMD_DATA) {
 		LOG_INFO("Kiss - queueing message\n");
@@ -151,7 +175,11 @@ void kiss_queue_process()
 	if (kiss_queue_len == 0) {
 		return;
 	}
-
+/*
+	if (kiss_afsk->cd) {
+		return;
+	}
+*/
 	if (kiss_ax25->dcd) {
 		return;
 	}

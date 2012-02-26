@@ -38,6 +38,8 @@ enum {
 	KISS_QUEUE_DELAYED,
 };
 
+typedef void (*kiss_in_callback_t)(uint8_t *buf, size_t len);
+
 struct Kiss_msg {
 	uint8_t buf[ CONFIG_AX25_FRAME_BUF_LEN ];
 	size_t pos;           // next byte to fill
@@ -45,6 +47,7 @@ struct Kiss_msg {
 };
 
 void kiss_init(Serial *ser, AX25Ctx *ax25, Afsk *afsk);
+void kiss_set_in_callback(uint8_t port, kiss_in_callback_t fnc);
 void kiss_serial_poll(void);
 void kiss_queue_message(uint8_t *buf, size_t len);
 void kiss_queue_process(void);
