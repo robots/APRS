@@ -15,7 +15,7 @@
 
 Afsk *ad_afsk;
 
-#define ADC_GPIO_BASE    ((struct stm32_gpio *)GPIOB_BASE)
+#define ADC_GPIO_BASE    ((struct stm32_gpio *)GPIOA_BASE)
 #define ADC_CH1_PIN      BV(1)
 #define ADC_CH1_CHANNEL  ADC_Channel_1
  
